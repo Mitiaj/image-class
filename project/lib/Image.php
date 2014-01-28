@@ -3,9 +3,8 @@ class Image {
     /**
      * @var string default image path
      */
-    private $sImageUploadPath = 'images/';
 
-    private $sImageName;
+    private $image;
 
     private $imageWidht;
 

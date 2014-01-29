@@ -18,7 +18,7 @@ class FileHelper
     /**
      * @var int default file size
      */
-    private $maxFileSize = 2000000;
+    private $maxFileSize = 20000000;
 
     /**
      * @var array allowed file types
@@ -38,7 +38,7 @@ class FileHelper
     }
 
     /**
-     * @param \new $newFileName
+     * @param string $newFileName
      */
     public function setNewFileName($newFileName)
     {
@@ -46,7 +46,7 @@ class FileHelper
     }
 
     /**
-     * @return \new
+     * @return string
      */
     public function getNewFileName()
     {
@@ -94,7 +94,7 @@ class FileHelper
     }
 
     /**
-     * Create ne file helper object
+     * Create new file helper object
      * you can pass config array and override default values.
      * This is defaul values
      *      [
@@ -107,6 +107,8 @@ class FileHelper
      *          ],
      *          'maxFileSize' => 20000
      *      ]
+     * or you can just create new object new FileHelper($file) and pass all parameters through setters methods
+     *
      * @param array $aFile file from $_POST array
      * @param array $aConfig config array
      *
@@ -144,7 +146,7 @@ class FileHelper
                 $this->randomizeFileName();
             }
             if (!move_uploaded_file($this->file->tmp_name, $this->getUploadDir().$this->getNewFileName())) {
-                throw new Exception('Error occured while uploading file');
+                throw new Exception('Error occurred while uploading file');
             }
 
         }

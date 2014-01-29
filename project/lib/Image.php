@@ -1,4 +1,8 @@
 <?php
+require_once('PngDriver.php');
+require_once('JpgDriver.php');
+require_once('GifDriver.php');
+
 class Image {
     /**
      * @var string default image path
@@ -6,154 +10,250 @@ class Image {
 
     private $image;
 
-    private $imageWidht;
-
-    private $imageHeight;
-
     private $oDriver;
 
+    private $imageInfo;
 
-    public function __contruct($sFile) {
-        if ($sFile != '') {
-            $this->sImageName = $sFile['name'];
-            $this->
-        }
-        $this->sImagePath = $sFile;
+    private $thumbWidth = 50;
+
+    private $thumbHeight = 50;
+
+    private $thumbPath = 'images/thumbs/';
+
+    private $cropPath = 'images/crops/';
+
+    private $proportional = false;
+
+    private $thumb;
+
+    private $croppedImage;
+
+    private $cropColor = 0xFFFFFF;
+
+    public function getCroppedImage() {
+        return $this->croppedImage;
     }
 
     /**
-     * @param array $aImage
+     * @param string $cropPath
      */
-    public function createThumb($aImage = ['width'=> 50, 'height' => 50, 'quality' => 100, 'proportional' => false, 'name' => false]) {
-
+    public function setCropPath($cropPath)
+    {
+        $this->cropPath = $cropPath;
     }
 
-    public function save() {
-
+    /**
+     * @return string
+     */
+    public function getCropPath()
+    {
+        return $this->cropPath;
     }
 
-    public function cropAround($sColor) {
-
+    /**
+     * @param mixed $newImageHeight
+     */
+    public function setNewImageHeight($newImageHeight)
+    {
+        $this->newImageHeight = $newImageHeight;
     }
 
-    public function getImagePath() {
-        return $this->sImagePath;
+    /**
+     * @return mixed
+     */
+    public function getNewImageHeight()
+    {
+        return $this->newImageHeight;
     }
 
-    public function getFullImagePath() {
-        return $this->sImagePath.$this->sImageName;
+    /**
+     * @param mixed $newImageWidth
+     */
+    public function setNewImageWidth($newImageWidth)
+    {
+        $this->newImageWidth = $newImageWidth;
     }
 
-}
-
-
-/**
- * easy image resize function
- * @param  $file - file name to resize
- * @param  $width - new image width
- * @param  $height - new image height
- * @param  $proportional - keep image proportional, default is no
- * @param  $output - name of the new file (include path if needed)
- * @param  $delete_original - if true the original image will be deleted
- * @param  $use_linux_commands - if set to true will use "rm" to delete the image, if false will use PHP unlink
- * @param  $quality - enter 1-100 (100 is best quality) default is 100
- * @return boolean|resource
- */
-function smart_resize_image($file,
-                            $width              = 0,
-                            $height             = 0,
-                            $proportional       = false,
-                            $output             = 'file',
-                            $delete_original    = true,
-                            $use_linux_commands = false,
-                            $quality = 100
-) {
-
-    if ( $height <= 0 && $width <= 0 ) return false;
-
-    # Setting defaults and meta
-    $info                         = getimagesize($file);
-    $image                        = '';
-    $final_width                  = 0;
-    $final_height                 = 0;
-    list($width_old, $height_old) = $info;
-
-    # Calculating proportionality
-    if ($proportional) {
-        if      ($width  == 0)  $factor = $height/$height_old;
-        elseif  ($height == 0)  $factor = $width/$width_old;
-        else                    $factor = min( $width / $width_old, $height / $height_old );
-
-        $final_width  = round( $width_old * $factor );
-        $final_height = round( $height_old * $factor );
-    }
-    else {
-        $final_width = ( $width <= 0 ) ? $width_old : $width;
-        $final_height = ( $height <= 0 ) ? $height_old : $height;
+    /**
+     * @return mixed
+     */
+    public function getNewImageWidth()
+    {
+        return $this->newImageWidth;
     }
 
-    # Loading image to memory according to type
-    switch ( $info[2] ) {
-        case IMAGETYPE_GIF:   $image = imagecreatefromgif($file);   break;
-        case IMAGETYPE_JPEG:  $image = imagecreatefromjpeg($file);  break;
-        case IMAGETYPE_PNG:   $image = imagecreatefrompng($file);   break;
-        default: return false;
+    /**
+     * @param boolean $proportional
+     */
+    public function setProportional($proportional)
+    {
+        $this->proportional = $proportional;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getProportional()
+    {
+        return $this->proportional;
+    }
+
+    /**
+     * @param int $thumbHeight
+     */
+    public function setThumbHeight($thumbHeight)
+    {
+        $this->thumbHeight = $thumbHeight;
+    }
+
+    /**
+     * @return int
+     */
+    public function getThumbHeight()
+    {
+        return $this->thumbHeight;
+    }
+
+    /**
+     * @param string $thumbPath
+     */
+    public function setThumbPath($thumbPath)
+    {
+        $this->thumbPath = $thumbPath;
+    }
+
+    /**
+     * @return string
+     */
+    public function getThumbPath()
+    {
+        return $this->thumbPath;
+    }
+
+    /**
+     * @param int $thumbWidth
+     */
+    public function setThumbWidth($thumbWidth)
+    {
+        $this->thumbWidth = $thumbWidth;
+    }
+
+    /**
+     * @return int
+     */
+    public function getThumbWidht()
+    {
+        return $this->thumbWidht;
     }
 
 
-    # This is the resizing/resampling/transparency-preserving magic
-    $image_resized = imagecreatetruecolor( $final_width, $final_height );
-    if ( ($info[2] == IMAGETYPE_GIF) || ($info[2] == IMAGETYPE_PNG) ) {
-        $transparency = imagecolortransparent($image);
 
-        if ($transparency >= 0) {
-            $transparent_color  = imagecolorsforindex($image, $trnprt_indx);
-            $transparency       = imagecolorallocate($image_resized, $trnprt_color['red'], $trnprt_color['green'], $trnprt_color['blue']);
-            imagefill($image_resized, 0, 0, $transparency);
-            imagecolortransparent($image_resized, $transparency);
+    /**
+     * Create image instance and pass array of params
+     * [
+     * 'image' => 'url to image',   //this one is nessesary
+     * 'proportional' => false //ttrue/false for proportional thumb
+     * 'thumbWidth' => 50,
+     * 'thumbHeight' => 50,
+     * 'thumbPath' => 'images/thumbs/',
+     * 'cropsPath' => 'images/crops'
+     * ]
+     *
+     * or you can set all properties by setters.
+     *
+     * @param array $aParams
+     * @throws Exception
+     */
+    public function __construct(array $aParams) {
+        if (count($aParams) && $aParams['image'] != '' && file_exists($aParams['image'])) {
+            foreach ($aParams as  $key => $value) {
+                if (property_exists($this, $key)) {
+                    $this->$key = $value;
+                }
+            }
+        } else {
+            throw new Exception('Wrong params');
         }
-        elseif ($info[2] == IMAGETYPE_PNG) {
-            imagealphablending($image_resized, false);
-            $color = imagecolorallocatealpha($image_resized, 0, 0, 0, 127);
-            imagefill($image_resized, 0, 0, $color);
-            imagesavealpha($image_resized, true);
+        $tmp =  getimagesize($this->image);
+        $this->imageInfo = (object) [
+            'width' => $tmp[0],
+            'height' => $tmp[1],
+            'typeInt' => $tmp[2],
+        ];
+    }
+
+    public function createThumb() {
+        $dimensions = $this->getDimensionsByProportion(
+            $this->imageInfo->width,
+            $this->imageInfo->height,
+            $this->thumbWidth,
+            $this->thumbHeight
+        );
+        $this->loadDriver();
+        $this->thumb = $this->oDriver->createThumb($dimensions);
+    }
+
+    public function resize () {
+
+    }
+
+    public function cropAround() {
+        $this->croppedImage = $this->oDriver->cropColor($this->cropColor);
+    }
+
+    public function getCreatedThumb() {
+        return $this->thumb;
+    }
+
+    private function loadDriver() {
+        $driver = '';
+        switch ( $this->imageInfo->typeInt ) {
+            case IMAGETYPE_GIF:
+                $driver = 'GifDriver';
+                break;
+            case IMAGETYPE_JPEG:
+                $driver = 'JpgDriver';
+                break;
+            case IMAGETYPE_PNG:
+                $driver = 'PngDriver';
+                break;
+            default: throw new Exception('Failed loading driver');
+        }
+        $this->initDriver(new $driver([
+            'image' => $this->image,
+            'imageInfo' => $this->imageInfo,
+            'thumbPath' => $this->thumbPath,
+            'cropPath' => $this->cropPath,
+            'cropColor' => $this->cropColor
+        ]));
+    }
+
+    private function initDriver(IDriver $driver) {
+        $this->oDriver = $driver;
+    }
+
+    private function  getDimensionsByProportion($width, $height, $newWidth, $newHeight){
+
+        if ($this->proportional) {
+            $factor = 0;
+            if ($newWidth  == 0) {
+                $factor = $newHeight/$height;
+            }  elseif ($newHeight == 0) {
+                $factor = $newWidth/$width;
+            } else {
+                $factor = min( $newWidth / $width, $newHeight / $height);
+            }
+            return (object) [
+                'width' =>  round( $width * $factor ),
+                'height' => round( $height * $factor )
+            ];
+        }
+        else {
+            return (object) [
+                'width' => ( $newWidth <= 0 ) ? $width : $newWidth,
+                'height' => ( $height <= 0 ) ? $height : $newHeight
+            ];
         }
     }
-    imagecopyresampled($image_resized, $image, 0, 0, 0, 0, $final_width, $final_height, $width_old, $height_old);
 
-    # Taking care of original, if needed
-    if ( $delete_original ) {
-        if ( $use_linux_commands ) exec('rm '.$file);
-        else @unlink($file);
-    }
-
-    # Preparing a method of providing result
-    switch ( strtolower($output) ) {
-        case 'browser':
-            $mime = image_type_to_mime_type($info[2]);
-            header("Content-type: $mime");
-            $output = NULL;
-            break;
-        case 'file':
-            $output = $file;
-            break;
-        case 'return':
-            return $image_resized;
-            break;
-        default:
-            break;
-    }
-
-    # Writing image according to type to the output destination and image quality
-    switch ( $info[2] ) {
-        case IMAGETYPE_GIF:   imagegif($image_resized, $output);    break;
-        case IMAGETYPE_JPEG:  imagejpeg($image_resized, $output, $quality);   break;
-        case IMAGETYPE_PNG:
-            $quality = 9 - (int)((0.9*$quality)/10.0);
-            imagepng($image_resized, $output, $quality);
-            break;
-        default: return false;
-    }
-
-    return true;
 }
